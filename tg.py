@@ -59,7 +59,6 @@ class BiorhythmCompatibility:
         self.compatibility_percentage = self.calculate_compatibility()
 
     def calculate_compatibility(self) -> int:
-        """Calculates compatibility percentage based on biorhythm differences."""
 
         total_difference = (
             abs(self.first_physical - self.second_physical) +
@@ -81,6 +80,32 @@ class Sector:
     digit: int | None
     title: str
     value: int
+
+    def __str__(self):
+        interpretation = self.interpret_value()
+        return f"{self.title}: {self.value} ({interpretation})"
+
+    def interpret_value(self):
+        if self.title == "Характер" and self.value == 0:
+            return "Пусто – редкий случай, следует приравнивать к 1."
+        elif self.title == "Долг" and self.value >= 2:
+            return "8/88 и более"
+        elif self.value == 1:
+            return "1 – мягкость, сниженные воля и ответственность, высокий статус."
+        elif self.value == 2:
+            return "11 – деликатный, вежливый, приятный, любит похвалу."
+        elif self.value == 3:
+            return "111 – золотая середина, адаптивность."
+        elif self.value == 4:
+            return "1111 – прирожденный лидер, инициативность."
+        elif self.value == 5:
+            return "11111 – диктатор, целеустремленность без препятствий."
+        elif self.value == 6:
+            return "111111 – перегруженный характер, завышенные амбиции, низкая целеустремленность."
+        elif self.value >= 7:
+            return "1111111 – усиленный контроль, избегание ответственности."
+        else:
+            return "Нет интерпретации."
 
 
 def get_digit_sum(number: int) -> int:
@@ -270,7 +295,7 @@ class PythagorasSquare:
     def __repr__(self) -> str:
         return (
             f"Квадрат Пифагора для {self.birthdate.strftime('%d.%m.%Y')}:\n\n"
-            f"Характер - {self.get_printable_sector_value(self.character)}\n"
+            f"Характер - {self.get_printable_sector_value(self.character)}, {self.interpret_value()}\n"
             f"Энергия - {self.get_printable_sector_value(self.energy)}\n"
             f"Интерес - {self.get_printable_sector_value(self.interest)}\n"
             f"Здоровье - {self.get_printable_sector_value(self.health)}\n"
@@ -294,6 +319,7 @@ class Form(StatesGroup):
     waiting_for_birthdate = State()
     waiting_for_first_birthdate = State()
     waiting_for_second_birthdate = State()
+    waiting_for_birthdate2 = State()
 
 
 with open('TOKEN.txt', 'r') as f:
@@ -306,15 +332,17 @@ dp.include_router(start_router)
 
 logging.basicConfig(level=logging.INFO)
 
-button_prediction = KeyboardButton(text="Получить предсказание")
-button_compatibility = KeyboardButton(text="Совместимость")
-button_help = KeyboardButton(text="Помощь")
+button_prediction = KeyboardButton(text="Получить предсказание 💌")
+button_compatibility = KeyboardButton(text="Совместимость 💫")
+button_help = KeyboardButton(text="❗️Помощь❗️")
+button_pythogoras = KeyboardButton(text="🧩Квадрат Пифагора 🧩")
 
 keyboard = ReplyKeyboardMarkup(
     keyboard=[
         [button_prediction],
         [button_compatibility],
-        [button_help]
+        [button_help],
+        [button_pythogoras]
     ],
     resize_keyboard=True,
     one_time_keyboard=False
@@ -336,15 +364,19 @@ async def cmd_help(message: types.Message):
 
 @dp.message()
 async def handle_message(message: types.Message, state: FSMContext):
-    if message.text == "Получить предсказание":
+    if message.text == "Получить предсказание 💌":
         await state.set_state(Form.waiting_for_birthdate)
         await message.answer("Введите свою дату рождения (в формате ДД.ММ.ГГГГ):")
 
-    elif message.text == "Совместимость":
+    elif message.text == "Совместимость 💫":
         await state.set_state(Form.waiting_for_first_birthdate)
         await message.answer("Введите первую дату рождения (в формате ДД.ММ.ГГГГ):")
 
-    elif message.text == "Помощь":
+    elif message.text == "🧩Квадрат Пифагора 🧩":
+        await state.set_state(Form.waiting_for_birthdate2)
+        await message.answer("Введите свою дату рождения (в формате ДД.ММ.ГГГГ):")
+
+    elif message.text == "❗️Помощь❗️":
         await cmd_help(message)
     else:
 
@@ -356,6 +388,9 @@ async def handle_message(message: types.Message, state: FSMContext):
 
         elif await state.get_state() == Form.waiting_for_second_birthdate:
             await process_second_birthdate(message, state)
+
+        elif await state.get_state() == Form.waiting_for_birthdate2:
+            await pyth_birthdate(message, state)
 
 
 predictions = [
@@ -375,37 +410,55 @@ predictions = [
 
 def calculate_compatibility(birthday1, birthday2):
     try:
-        biorhythm_result = BiorithmCompatibility(birthday1, birthday2)
-        pythagoras1 = PythagorasSquare(birthday1)
-        pythagoras2 = PythagorasSquare(birthday2)
-        biorhythm_str = (f"Physical: {biorhythm_result.physical}\n"
-                         f"Emotional: {biorhythm_result.emotional}\n"
-                         f"Intelligent: {biorhythm_result.intelligent}\n"
-                         f"Heart: {biorhythm_result.heart}\n"
-                         f"Creative: {biorhythm_result.creative}\n"
-                         f"Intuitive: {biorhythm_result.intuitive}\n"
-                         f"Higher: {biorhythm_result.higher}\n"
-                         f"Summary: {biorhythm_result.summary}")
+        biorhythm_result = BiorhythmCompatibility(birthday1, birthday2)
+        biorhythm_str = (biorhythm_result.calculate_compatibility())
 
         return (
-            f"Совместимость между {birthday1.strftime('%d.%m.%Y')} и {birthday2.strftime('%d.%m.%Y')} рассчитана.\n"
-            f"Биоритмы:\n{biorhythm_str}\n"
-            f"\n{pythagoras1}\n"
-            f"\n{pythagoras2}"
+            f"🤍Совместимость между {birthday1.strftime('%d.%m.%Y')} и {birthday2.strftime('%d.%m.%Y')} рассчитана 🤍\n"
+            f"\nБиоритмы: {biorhythm_str}%\n"
         )
 
     except Exception as e:
         return f"Ошибка при расчете совместимости: {e}"
 
 
+def calculate_square(birthday1):
+    try:
+        pythagoras1 = PythagorasSquare(birthday1)
+
+        return (
+            f"🧩Рассчет квадрата Пифагора 🧩\n"
+            f"{pythagoras1}"
+        )
+
+    except Exception as e:
+        return f"Ошибка при расчете квадрата Пифагора: {e}"
+
+
 def validate_date(date_str):
     try:
         date = parse(date_str, dayfirst=True)
         if date > datetime.datetime.now():
-            raise ValueError("Future dates are not allowed.")
+            raise ValueError("Такой даты еще не было.")
         return date.date()
+
     except ValueError as e:
         raise ValueError(f"Invalid date: {e}")
+
+
+@dp.message(StateFilter(Form.waiting_for_birthdate2))
+async def pyth_birthdate(message: types.Message, state: FSMContext):
+    try:
+        birthdate = validate_date(message.text)
+        result = calculate_square(birthdate)
+        await message.answer(result)
+        await state.clear()
+
+    except (ValueError, IndexError):
+        await message.answer("Неправильный формат даты! Введите ее в формате ДД.ММ.ГГГГ.")
+
+    except Exception as e:
+        logging.exception(f"An error occurred: {e}")
 
 
 @dp.message(StateFilter(Form.waiting_for_birthdate))
@@ -416,8 +469,10 @@ async def handle_birthdate(message: types.Message, state: FSMContext):
         random_prediction = random.choice(predictions)
         await message.answer(f"{user_name}, вот предсказание: {random_prediction}")
         await state.clear()
+
     except (ValueError, IndexError):
         await message.answer("Неправильный формат даты! Введите ее в формате ДД.ММ.ГГГГ.")
+
     except Exception as e:
         logging.exception(f"An error occurred: {e}")
 
@@ -446,8 +501,10 @@ async def process_second_birthdate(message: types.Message, state: FSMContext):
         await message.answer("Для получения более развернутой совместимости нажмите кнопку 'Оплатить'.",
                              reply_markup=payment_keyboard())
         await state.clear()
+
     except ValueError as e:
         await message.answer(f"Ошибка: {e}")
+
     except Exception as e:
         logging.exception(f"An error occurred: {e}")
 
