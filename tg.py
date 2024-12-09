@@ -81,55 +81,122 @@ class Sector:
     title: str
     value: int
 
-    def __str__(self):
-        interpretation = self.interpret_value()
-        return f"{self.title}: {self.value} ({interpretation})"
 
-    def interpret_value(self):
-        if self.title == "Характер" and self.value == 0:
-            return "Пусто – редкий случай, следует приравнивать к 1."
-        elif self.title == "Долг" and self.value >= 2:
-            return "8/88 и более"
-        elif self.value == 1:
-            return "1 – мягкость, сниженные воля и ответственность, высокий статус."
-        elif self.value == 2:
-            return "11 – деликатный, вежливый, приятный, любит похвалу."
-        elif self.value == 3:
-            return "111 – золотая середина, адаптивность."
-        elif self.value == 4:
-            return "1111 – прирожденный лидер, инициативность."
-        elif self.value == 5:
-            return "11111 – диктатор, целеустремленность без препятствий."
-        elif self.value == 6:
-            return "111111 – перегруженный характер, завышенные амбиции, низкая целеустремленность."
-        elif self.value >= 7:
-            return "1111111 – усиленный контроль, избегание ответственности."
-        else:
-            return "Нет интерпретации."
-
-
-def get_digit_sum(n: int) -> int:
-    s = 0
-    while n:
-        s += n % 10
-        n //= 10
-    return s
-
+def get_digit_sum(number: int) -> int:
+    return sum(int(digit) for digit in str(number))
 
 
 def zero_fill(number: int, width: int = 2) -> str:
     return str(number).zfill(width)
 
 
-@dataclass
+@dataclasses.dataclass
 class PythagorasSquare:
     birthdate: datetime.date
 
     def __post_init__(self) -> None:
         self.string_birthdate = self.birthdate.strftime("%d%m%Y")
         self.digit_rows = self.get_digit_rows()
-        self.sectors = self.calculate_sectors()
+        self.character = Sector(
+            digit=1,
+            title="Характер",
+            value=self.get_sector_value(1),
+        )
+        self.energy = Sector(
+            digit=2,
+            title="Энергия",
+            value=self.get_sector_value(2),
+        )
+        self.interest = Sector(
+            digit=3,
+            title="Интерес",
+            value=self.get_sector_value(3),
+        )
+        self.health = Sector(
+            digit=4,
+            title="Здоровье",
+            value=self.get_sector_value(4),
+        )
+        self.logic = Sector(
+            digit=5,
+            title="Логика",
+            value=self.get_sector_value(5),
+        )
+        self.labour = Sector(
+            digit=6,
+            title="Труд",
+            value=self.get_sector_value(6),
+        )
+        self.luck = Sector(
+            digit=7,
+            title="Удача",
+            value=self.get_sector_value(7),
+        )
+        self.duty = Sector(
+            digit=8,
+            title="Долг",
+            value=self.get_sector_value(8),
+        )
+        self.memory = Sector(
+            digit=9,
+            title="Память",
+            value=self.get_sector_value(9),
+        )
 
+        self.self_assessment = Sector(
+            digit=None,
+            title="Самооценка",
+            value=self.get_additional_sector_value(
+                [self.character, self.energy, self.interest],
+            ),
+        )
+        self.life = Sector(
+            digit=None,
+            title="Быт",
+            value=self.get_additional_sector_value(
+                [self.health, self.logic, self.labour],
+            ),
+        )
+        self.talent = Sector(
+            digit=None,
+            title="Талант",
+            value=self.get_additional_sector_value([self.luck, self.duty, self.memory]),
+        )
+        self.goal = Sector(
+            digit=None,
+            title="Цель",
+            value=self.get_additional_sector_value(
+                [self.character, self.health, self.luck],
+            ),
+        )
+        self.family = Sector(
+            digit=None,
+            title="Семья",
+            value=self.get_additional_sector_value(
+                [self.energy, self.logic, self.duty],
+            ),
+        )
+        self.habits = Sector(
+            digit=None,
+            title="Привычки",
+            value=self.get_additional_sector_value(
+                [self.interest, self.labour, self.memory],
+            ),
+        )
+        self.spirit = Sector(
+            digit=None,
+            title="Дух",
+            value=self.get_additional_sector_value(
+                [self.character, self.logic, self.memory],
+            ),
+        )
+        self.temperament = Sector(
+            digit=None,
+            title="Темперамент",
+            value=self.get_additional_sector_value(
+                [self.interest, self.logic, self.luck],
+            ),
+        )
 
     def get_first_number(self) -> int:
         return get_digit_sum(int(self.string_birthdate))
@@ -145,52 +212,82 @@ class PythagorasSquare:
 
     def get_digit_rows(self) -> list[list[int]]:
         second_row = (
-            list(map(int, list(zero_fill(self.get_first_number()))))
-            + list(map(int, list(zero_fill(self.get_second_number()))))
-            + list(map(int, list(zero_fill(self.get_third_number()))))
-            + list(map(int, list(zero_fill(self.get_fourth_number()))))
+                list(zero_fill(self.get_first_number()))
+                + list(zero_fill(self.get_second_number()))
+                + list(zero_fill(self.get_third_number()))
+                + list(zero_fill(self.get_fourth_number()))
         )
 
         return [
-            list(map(int, list(self.string_birthdate))),
-            second_row
+            [int(digit) for digit in self.string_birthdate],
+            [int(digit) for digit in second_row],
         ]
 
     def get_sector_value(self, digit: int) -> int:
-        count = 0
-        for row in self.digit_rows:
-            count += row.count(digit)
-        return count
+        value: int = 0
+        numbers = self.digit_rows[0] + self.digit_rows[1]
+        for d in numbers:
+            if d == digit:
+                value += 1
+        return value
 
-    def get_additional_sector_value(self, sectors: list[Sector]) -> int:
-        return sum(s.value for s in sectors)
+    @staticmethod
+    def get_additional_sector_value(base_sectors: list[Sector]) -> int:
+        value: int = 0
+        for base_sector in base_sectors:
+            value += base_sector.value
+        return value
 
-
-    def calculate_sectors(self) -> list[Sector]:
-        sectors = [
-            Sector(digit=1, title="Характер", value=self.get_sector_value(1)),
-            Sector(digit=2, title="Энергия", value=self.get_sector_value(2)),
-            Sector(digit=3, title="Интерес", value=self.get_sector_value(3)),
-            Sector(digit=4, title="Здоровье", value=self.get_sector_value(4)),
-            Sector(digit=5, title="Логика", value=self.get_sector_value(5)),
-            Sector(digit=6, title="Труд", value=self.get_sector_value(6)),
-            Sector(digit=7, title="Удача", value=self.get_sector_value(7)),
-            Sector(digit=8, title="Долг", value=self.get_sector_value(8)),
-            Sector(digit=9, title="Память", value=self.get_sector_value(9)),
-            Sector(digit=None, title="Самооценка", value=self.get_additional_sector_value([self.get_sector_value(1), self.get_sector_value(2), self.get_sector_value(3)])),
-            Sector(digit=None, title="Быт", value=self.get_additional_sector_value([self.get_sector_value(4), self.get_sector_value(5), self.get_sector_value(6)])),
-            Sector(digit=None, title="Талант", value=self.get_additional_sector_value([self.get_sector_value(7), self.get_sector_value(8), self.get_sector_value(9)])),
-            Sector(digit=None, title="Цель", value=self.get_additional_sector_value([self.get_sector_value(1), self.get_sector_value(4), self.get_sector_value(7)])),
-            Sector(digit=None, title="Семья", value=self.get_additional_sector_value([self.get_sector_value(2), self.get_sector_value(5), self.get_sector_value(8)])),
-            Sector(digit=None, title="Привычки", value=self.get_additional_sector_value([self.get_sector_value(3), self.get_sector_value(6), self.get_sector_value(9)])),
-            Sector(digit=None, title="Дух", value=self.get_additional_sector_value([self.get_sector_value(1), self.get_sector_value(5), self.get_sector_value(9)])),
-            Sector(digit=None, title="Темперамент", value=self.get_additional_sector_value([self.get_sector_value(3), self.get_sector_value(5), self.get_sector_value(7)])),
+    def get_magic_square_printable(self) -> list[list[str]]:
+        return [
+            [
+                self.get_printable_sector_value(self.character),
+                self.get_printable_sector_value(self.health),
+                self.get_printable_sector_value(self.luck),
+            ],
+            [
+                self.get_printable_sector_value(self.energy),
+                self.get_printable_sector_value(self.logic),
+                self.get_printable_sector_value(self.duty),
+            ],
+            [
+                self.get_printable_sector_value(self.interest),
+                self.get_printable_sector_value(self.labour),
+                self.get_printable_sector_value(self.memory),
+            ],
         ]
-        return sectors
+
+    @staticmethod
+    def get_printable_sector_value(sector: Sector) -> str:
+        if sector.value == 0:
+            return "нет цифр"
+        if sector.digit is not None:
+            return str(sector.digit) * sector.value
+        else:
+            return str(sector.value)
 
 
-    def __str__(self):
-        return "\n".join(map(str, self.sectors))
+    def __repr__(self) -> str:
+        return (
+            f"Квадрат Пифагора для {self.birthdate.strftime('%d.%m.%Y')}:\n\n"
+            f"Характер - {self.get_printable_sector_value(self.character)}\n"
+            f"Энергия - {self.get_printable_sector_value(self.energy)}\n"
+            f"Интерес - {self.get_printable_sector_value(self.interest)}\n"
+            f"Здоровье - {self.get_printable_sector_value(self.health)}\n"
+            f"Логика - {self.get_printable_sector_value(self.logic)}\n"
+            f"Труд - {self.get_printable_sector_value(self.labour)}\n"
+            f"Удача - {self.get_printable_sector_value(self.luck)}\n"
+            f"Долг - {self.get_printable_sector_value(self.duty)}\n"
+            f"Память - {self.get_printable_sector_value(self.memory)}\n"
+            f"Самооценка - {self.get_printable_sector_value(self.self_assessment)}\n"
+            f"Быт - {self.get_printable_sector_value(self.life)}\n"
+            f"Талант - {self.get_printable_sector_value(self.talent)}\n"
+            f"Цель - {self.get_printable_sector_value(self.goal)}\n"
+            f"Семья - {self.get_printable_sector_value(self.family)}\n"
+            f"Привычки - {self.get_printable_sector_value(self.habits)}\n"
+            f"Дух - {self.get_printable_sector_value(self.spirit)}\n"
+            f"Темперамент - {self.get_printable_sector_value(self.temperament)}\n"
+        )
 
 
 class Form(StatesGroup):
@@ -282,8 +379,35 @@ predictions = [
     "Вас ждет день, полный радости и веселья. Наслаждайтесь моментом!",
     "Вас ждет успех в делах и гармония в личной жизни. Отличного дня!",
     "Не бойтесь быть собой, и мир откроет перед вами свои объятия.",
-
+    "В ближайшем будущем вы будете гордиться собой и своими достижениями.",
+    "Ваша упорная работа принесет плоды, и вы получите заслуженное признание.",
+    "Вы откроете в себе скрытый потенциал и удивите сами себя своими способностями.",
+    "Ваша изобретательность и креативность приведут к инновационным решениям и успеху.",
+    "Вы добьетесь финансовой стабильности и независимости, создав прочный фундамент для будущего.",
+    "Ваш труд вдохновит других, и вы станете примером для подражания.",
+    "Вы создадите что-то значимое, что оставит свой след в истории.",
+    "Вас ждет грандиозный успех, превышающий все ваши самые смелые мечты.",
+    "Вы станете более уверенным и самодостаточным человеком.",
+    "Вы научитесь управлять своими эмоциями и стрессом, обретя внутренний покой.",
+    "Ваша мудрость и жизненный опыт значительно возрастут.",
+    "Вы обретете новые знания и навыки, которые помогут вам расти и развиваться.",
+    "Вы построите крепкие и доверительные отношения с близкими людьми.",
+    "Вы найдете своё призвание и будете получать удовольствие от своей работы.",
+    "Вы научитесь ценить каждый момент жизни и радоваться мелочам.",
+    "Вы станете более терпимым и понимающим человеком.",
+    "Ваша жизнь наполнится смыслом и радостью.",
+    "Вы достигнете гармонии между своей внутренней жизнью и внешним миром.",
+    "Вас ждет период счастья, спокойствия и умиротворения.",
+    "Вы будете окружены любовью и заботой близких людей.",
+    "Ваша жизнь будет наполнена яркими и незабываемыми событиями.",
+    "Вы будете чувствовать себя счастливым и удовлетворенным жизнью.",
+    "Вам улыбнется удача, и вы окажетесь в нужном месте в нужное время.",
+    "Все ваши желания исполнятся.",
+    "Вас ждет период процветания и благополучия.",
+    "Вы обретете финансовую свободу и сможете позволить себе всё, что пожелаете.",
+    "Вас ждет светлое и счастливое будущее, полное радости и успеха."
 ]
+
 
 
 def calculate_compatibility(birthday1, birthday2):
