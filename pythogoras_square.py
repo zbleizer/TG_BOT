@@ -221,4 +221,4 @@ class PythagorasSquare:
             f"Привычки - {self.get_printable_sector_value(self.habits)}\n"
             f"Дух - {self.get_printable_sector_value(self.spirit)}\n"
             f"Темперамент - {self.get_printable_sector_value(self.temperament)}\n"
-        )
+        ) # calc pyth square
