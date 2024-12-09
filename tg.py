@@ -72,7 +72,7 @@ class BiorhythmCompatibility:
 
         max_possible_difference = 7 * max(PHYSICAL_CONST, EMOTIONAL_CONST, INTELLIGENT_CONST, HEART_CONST, CREATIVE_CONST, INTUITIVE_CONST, HIGHER_CONST)
         compatibility = 100 - int((total_difference / max_possible_difference) * 100)
-        return max(0, min(100, compatibility))
+        return max(0, min(100, compatibility))       #рассчет совместимости по биоритмическому дереву
 
 
 @dataclasses.dataclass
@@ -287,7 +287,7 @@ class PythagorasSquare:
             f"Привычки - {self.get_printable_sector_value(self.habits)}\n"
             f"Дух - {self.get_printable_sector_value(self.spirit)}\n"
             f"Темперамент - {self.get_printable_sector_value(self.temperament)}\n"
-        )
+        )  #рассчет квадрата пифагора
 
 
 class Form(StatesGroup):
@@ -310,7 +310,7 @@ logging.basicConfig(level=logging.INFO)
 button_prediction = KeyboardButton(text="Получить предсказание 💌")
 button_compatibility = KeyboardButton(text="Совместимость 💫")
 button_help = KeyboardButton(text="❗️Помощь❗️")
-button_pythogoras = KeyboardButton(text="🧩Квадрат Пифагора 🧩")
+button_pythogoras = KeyboardButton(text="🧩Квадрат Пифагора 🧩") #клавиатура
 
 keyboard = ReplyKeyboardMarkup(
     keyboard=[
@@ -406,7 +406,7 @@ predictions = [
     "Вас ждет период процветания и благополучия.",
     "Вы обретете финансовую свободу и сможете позволить себе всё, что пожелаете.",
     "Вас ждет светлое и счастливое будущее, полное радости и успеха."
-]
+] # предсказания
 
 
 
@@ -421,7 +421,7 @@ def calculate_compatibility(birthday1, birthday2):
         )
 
     except Exception as e:
-        return f"Ошибка при расчете совместимости: {e}"
+        return f"Ошибка при расчете совместимости: {e}"        #вывод совместимости
 
 
 def calculate_square(birthday1):
@@ -434,7 +434,7 @@ def calculate_square(birthday1):
         )
 
     except Exception as e:
-        return f"Ошибка при расчете квадрата Пифагора: {e}"
+        return f"Ошибка при расчете квадрата Пифагора: {e}"     # вывод кквадрата пифагора
 
 
 def validate_date(date_str):
@@ -514,7 +514,7 @@ async def process_second_birthdate(message: types.Message, state: FSMContext):
 def payment_keyboard():
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text='Оплатить', callback_data='pay')]  # Correct way
+            [InlineKeyboardButton(text='Оплатить', callback_data='pay')]  #кнопка платежа
         ]
     )
     return keyboard
