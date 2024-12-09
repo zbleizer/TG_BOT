@@ -54,4 +54,4 @@ class BiorhythmCompatibility:
 
         max_possible_difference = 7 * max(PHYSICAL_CONST, EMOTIONAL_CONST, INTELLIGENT_CONST, HEART_CONST, CREATIVE_CONST, INTUITIVE_CONST, HIGHER_CONST)
         compatibility = 100 - int((total_difference / max_possible_difference) * 100)
-        return max(0, min(100, compatibility))
+        return max(0, min(100, compatibility)) # calc biorithms
